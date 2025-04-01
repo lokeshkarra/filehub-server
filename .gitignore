@@ -23,6 +23,7 @@ var/
 filemanager.egg-info/
 /media/user_files/*
 /media/profile_photo/*
+accounts/migrations/*
 
 
 
