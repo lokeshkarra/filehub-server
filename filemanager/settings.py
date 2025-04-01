@@ -142,6 +142,9 @@ SIMPLE_JWT = {
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # React development server
     "https://yourdomain.com",
+    "http://localhost:8080",
+    "http://192.168.216.192:8080",
+
 ]
 
 # Spectacular (Swagger) Settings
