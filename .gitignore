@@ -21,7 +21,8 @@ var/
 .mypy_cache/
 .pytest_cache/
 filemanager.egg-info/
-/media/user_files
+/media/user_files/*
+/media/profile_photo/*
 
 
 
