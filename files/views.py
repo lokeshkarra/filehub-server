@@ -4,12 +4,15 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Sum, Count
-from django.http import FileResponse
+from django.http import FileResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from urllib.parse import quote
 from django.utils.encoding import smart_str
 from .models import File
 from .serializers import FileSerializer, FileDashboardSerializer
+from .utils import generate_presigned_url  # Import the utility function
+from django.http import StreamingHttpResponse
+import boto3
 
 class FileViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
@@ -17,8 +20,10 @@ class FileViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return File.objects.filter(owner=self.request.user)
+
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
+
     @action(detail=False, methods=['GET'])
     def dashboard(self, request):
         files = self.get_queryset()
@@ -44,17 +49,20 @@ class FileViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated])
     def download(self, request, pk=None):
-        file_instance = get_object_or_404(File, pk=pk)
-        file_path = file_instance.file.path  # Path to the file
-        file_name = file_instance.filename  # Use the `filename` field for the file name
-        print(file_name)
+        file_instance = get_object_or_404(File, pk=pk, owner=request.user)
+        bucket_name = 'filehub-media-s3'
+        object_key = file_instance.file.name
 
-        # Ensure the filename is properly encoded
-        encoded_file_name = quote(file_name)
-
-        response = FileResponse(open(file_path, 'rb'), as_attachment=True)
-        response['Content-Disposition'] = (
-            f'attachment; filename="{smart_str(file_name)}"; filename*=UTF-8\'\'{encoded_file_name}'
-        )
-        return response
-
+        # Fetch the file from S3
+        s3_client = boto3.client('s3')
+        try:
+            s3_object = s3_client.get_object(Bucket=bucket_name, Key=object_key)
+            response = StreamingHttpResponse(
+                s3_object['Body'].iter_chunks(),
+                content_type=s3_object['ContentType']
+            )
+            # Set the Content-Disposition header with the correct filename
+            response['Content-Disposition'] = f'attachment; filename="{smart_str(file_instance.filename)}"'
+            return response
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
