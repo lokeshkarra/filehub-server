@@ -22,19 +22,27 @@ This repository contains the backend API for a secure and efficient file managem
     - Total storage utilized.
     - Recent file uploads.
     - File type distribution.
+- **AWS S3 Integration:**
+  - Stores user-uploaded files securely in an AWS S3 bucket.
+  - Provides presigned URLs for secure file downloads.
+- **AWS RDS Integration:**
+  - Uses AWS RDS PostgreSQL for scalable and reliable database management.
+- **Password Management:**
+  - API endpoints for changing passwords and resetting forgotten passwords.
 - **RESTful API Design:**
   - Clean and well-documented API endpoints using Django REST Framework.
   - JSON request/response format for easy integration.
 - **Robust Validation:**
   - File type validation to ensure only allowed file types are uploaded.
-  - Password validation during user registration.
+  - Password validation during user registration and updates.
 
 ## Tech Stack
 
 - **Backend Framework:** [Django](https://www.djangoproject.com/) - A high-level Python web framework that encourages rapid development and clean, pragmatic design.
 - **API Framework:** [Django REST Framework](https://www.django-rest-framework.org/) - A powerful and flexible toolkit for building Web APIs.
 - **Authentication:** [Django REST Framework Simple JWT](https://django-rest-framework-simplejwt.readthedocs.io/en/latest/) - JSON Web Token authentication for REST APIs.
-- **Database:** [PostgreSQL](https://www.postgresql.org/) - A powerful, open-source relational database system known for its reliability and features.
+- **Database:** [AWS RDS PostgreSQL](https://aws.amazon.com/rds/) - A scalable and managed relational database service.
+- **File Storage:** [AWS S3](https://aws.amazon.com/s3/) - Secure and scalable object storage for user-uploaded files.
 - **Python Version:** 3.12+
 
 ## Project Structure
@@ -130,19 +138,23 @@ To run this project locally, follow these steps:
       DJANGO_DEBUG=True  # Set to False in production
       DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
 
-      DB_NAME=filemanager_db
-      DB_USER=your_db_user
+      DB_NAME=filemanager
+      DB_USER=filemanageruser
       DB_PASSWORD=your_db_password
-      DB_HOST=localhost
+      DB_HOST=your_rds_endpoint.amazonaws.com
       DB_PORT=5432
+
+      AWS_ACCESS_KEY_ID=your_aws_access_key
+      AWS_SECRET_ACCESS_KEY=your_aws_secret_key
+      AWS_STORAGE_BUCKET_NAME=your_s3_bucket_name
+
+      EMAIL_HOST_USER=your_email@example.com
+      EMAIL_HOST_PASSWORD=your_email_password_or_app_password
       ```
 
     - **Note:** For production, ensure `DJANGO_DEBUG=False` and use a strong, unique `DJANGO_SECRET_KEY`. Securely manage your database credentials.
 
-6.  - Ensure you have PostgreSQL installed and running.
-    - Create a PostgreSQL database with the name specified in your `.env` file (`DB_NAME`).
-
-7.  **Run migrations:**
+6.  **Run migrations:**
 
     ```bash
     python manage.py makemigrations accounts
@@ -150,13 +162,13 @@ To run this project locally, follow these steps:
     python manage.py migrate
     ```
 
-8.  **Create a superuser (admin account):**
+7.  **Create a superuser (admin account):**
 
     ```bash
     python manage.py createsuperuser
     ```
 
-9.  **Start the development server:**
+8.  **Start the development server:**
 
     ```bash
     python manage.py runserver
@@ -166,27 +178,29 @@ To run this project locally, follow these steps:
 
 ## API Endpoints
 
-Here are the main API endpoints:
+### **Authentication:**
 
-- **Authentication:**
+- `POST /api/auth/register/`: User registration.
+- `POST /api/auth/login/`: User login (returns JWT access and refresh tokens).
+- `POST /api/auth/forgot-password/`: Request a password reset email.
+- `POST /api/auth/reset-password/<user_id>/<token>/`: Reset password using a token.
+- `POST /api/auth/change-password/`: Change the password for an authenticated user.
+- `GET /api/auth/profile/`: Get user profile (requires authentication).
+- `PUT /api/auth/profile/`: Update user profile (requires authentication).
 
-  - `POST /api/auth/register/`: User registration.
-  - `POST /api/auth/login/`: User login (returns JWT access and refresh tokens).
-  - `GET /api/auth/profile/`: Get user profile (requires authentication).
-  - `PUT /api/auth/profile/`: Update user profile (requires authentication).
+### **Files:**
 
-- **Files:**
+- `POST /api/files/`: Upload a new file (requires authentication, `multipart/form-data`).
+- `GET /api/files/`: List all files for the authenticated user (requires authentication).
+- `GET /api/files/{id}/`: Retrieve details of a specific file (requires authentication).
+- `DELETE /api/files/{id}/`: Delete a specific file (requires authentication).
+- `GET /api/files/dashboard/`: Get file dashboard statistics (requires authentication).
+- `GET /api/files/{id}/download/`: Download a specific file (requires authentication).
 
-  - `POST /api/files/`: Upload a new file (requires authentication, `multipart/form-data`).
-  - `GET /api/files/`: List all files for the authenticated user (requires authentication).
-  - `GET /api/files/{id}/`: Retrieve details of a specific file (requires authentication).
-  - `DELETE /api/files/{id}/`: Delete a specific file (requires authentication).
-  - `GET /api/files/dashboard/`: Get file dashboard statistics (requires authentication).
-  - `GET /api/files/{id}/download/`: Download a specific file (requires authentication).
+### **API Documentation:**
 
-- **API Documentation:**
-  - `/api/schema/swagger-ui/`: Swagger UI for API documentation (automatically generated).
-  - `/api/schema/redoc/`: ReDoc for API documentation (automatically generated).
+- `/api/schema/swagger-ui/`: Swagger UI for API documentation (automatically generated).
+- `/api/schema/redoc/`: ReDoc for API documentation (automatically generated).
 
 ## Running Tests
 
