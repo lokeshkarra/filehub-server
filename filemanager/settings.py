@@ -40,10 +40,10 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  # CORS middleware must come first
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -112,6 +112,17 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# AWS S3 Configuration
+AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')  # Add this to your .env file
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')  # Add this to your .env file
+AWS_STORAGE_BUCKET_NAME = 'filehub-media-s3'  # Update with the correct bucket name
+AWS_S3_REGION_NAME = 'ap-south-1'  # Replace with your bucket's region
+AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+
+# Media Files Storage
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/'
+
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -138,14 +149,44 @@ SIMPLE_JWT = {
     'BLACKLIST_AFTER_ROTATION': True,
 }
 
+CORS_ALLOW_ALL_ORIGINS = True  # Use only for debugging
+CORS_ALLOW_CREDENTIALS = True
 # CORS Configuration
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # React development server
-    "https://yourdomain.com",
-    "http://localhost:8080",
-    "http://192.168.216.192:8080",
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:5173",  # Vite (if using Vite for React)
+#     "http://localhost:3000",  # React default dev server
+#     "http://127.0.0.1:3000",  # Alternative for localhost
+#     "https://yourdomain.com",
+#     "http://localhost:8080",
+#     "http://192.168.216.192:8080",
 
+# ]
+
+CORS_ALLOW_METHODS = [
+    "GET",
+    "POST",
+    "PUT",
+    "PATCH",
+    "DELETE",
+    "OPTIONS",
 ]
+
+CORS_ALLOW_HEADERS = [
+    "authorization",
+    "content-type",
+]
+CORS_EXPOSE_HEADERS = [
+    "Content-Disposition",  # Expose the Content-Disposition header
+]
+
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "https://yourdomain.com",
+]
+
 
 # Spectacular (Swagger) Settings
 SPECTACULAR_SETTINGS = {
@@ -188,7 +229,20 @@ if DEBUG:  # Or some other condition to detect testing
         'corsheaders.middleware.CorsMiddleware',
         'django.middleware.common.CommonMiddleware',
        # 'django.middleware.csrf.CsrfViewMiddleware', #remove csrf middleware
+        'django.middleware.common.CommonMiddleware', # added just now
         'django.contrib.auth.middleware.AuthenticationMiddleware',
         'django.contrib.messages.middleware.MessageMiddleware',
         'django.middleware.clickjacking.XFrameOptionsMiddleware',
     ]
+
+# Email Configuration
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')  # Load from .env
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')  # Load from .env
+
+# Frontend URL for password reset link
+FRONTEND_URL = 'http://localhost:8080'  # Replace with your frontend URL
+DEFAULT_FROM_EMAIL = 'FileHub wweloki5555@gmailcom'
